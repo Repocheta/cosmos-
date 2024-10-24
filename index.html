@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmos</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a2a;
+            overflow: auto;
+            color: #ffffff;
+        }
+        header {
+            background-color: rgba(10, 10, 42, 0.9);
+            color: #ffcc00;
+            text-align: center;
+            padding: 20px 0;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 1);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 400px;
+            margin: 20px auto;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            backdrop-filter: blur(15px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #6a5acd;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        button:hover {
+            background-color: #483d8b;
+            transform: scale(1.05);
+        }
+        .error-message {
+            color: #ff6666;
+            display: none;
+        }
+        #reset-button {
+            background-color: #ff4d4d;
+            color: white;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+        #reset-button:hover {
+            background-color: #e60000;
+        }
+        #stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+        h2 {
+            color: #66ff66;
+            text-align: center;
+            text-shadow: 0 0 5px rgba(102, 255, 102, 0.8);
+        }
+        p {
+            color: #ffffff;
+            text-align: center;
+        }
+        ul {
+            padding: 0;
+            margin: 0;
+            width: 100%;
+        }
+        ul li {
+            background-color: rgba(255, 255, 255, 0.2);
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        ul li:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+        .planet {
+            position: absolute;
+            bottom: 10%;
+            right: 5%;
+            width: 100px; /* Ajusta el tamaño del planeta */
+            height: 100px;
+            border-radius: 50%;
+            background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Earth_political_2560x1600.svg/2560px-Earth_political_2560x1600.svg.png'); /* Imagen de un planeta */
+            background-size: cover;
+            z-index: 1;
+            box-shadow: 0 0 30px rgba(255, 255, 255, 0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="stars"></canvas>
+
+    <header>
+        <h1>Cosmos</h1>
+    </header>
+
+    <div class="container" id="register-container">
+        <h2>Registro</h2>
+        <input type="text" id="register-username" placeholder="Nombre de usuario" required>
+        <input type="password" id="register-password" placeholder="Contraseña" required>
+        <button id="register-button">Registrar</button>
+        <p class="error-message" id="register-error">Por favor ingresa un nombre de usuario y una contraseña válidos.</p>
+    </div>
+
+    <div class="container" id="login-container" style="display: none;">
+        <h2>Inicio de Sesión</h2>
+        <input type="text" id="login-username" placeholder="Nombre de usuario" required>
+        <input type="password" id="login-password" placeholder="Contraseña" required>
+        <button id="login-button">Iniciar Sesión</button>
+        <p class="error-message" id="login-error">Datos incorrectos. Inténtalo de nuevo.</p>
+    </div>
+
+    <div class="container" id="app-container" style="display: none;">
+        <h2>Agregar Gasto</h2>
+        <form id="expense-form">
+            <input type="text" id="expense-name" placeholder="Nombre del gasto" required>
+            <input type="number" id="expense-amount" placeholder="Cantidad" required>
+            <button type="submit">Agregar Gasto</button>
+        </form>
+
+        <h2>Gastos</h2>
+        <ul class="expenses-list" id="expenses-list"></ul>
+
+        <h2>Presupuesto Mensual</h2>
+        <input type="number" id="monthly-budget" placeholder="Ingresa tu presupuesto mensual" required>
+        <button id="set-budget">Establecer Presupuesto</button>
+        <p id="budget-status"></p>
+
+        <h2>Resumen Mensual</h2>
+        <p id="total-expenses"></p>
+        <p id="total-savings"></p>
+
+        <button id="reset-button">Reiniciar Todo</button>
+    </div>
+
+    <script>
+        let registeredUsername = "";
+        let registeredPassword = "";
+
+        const registerContainer = document.getElementById('register-container');
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app-container');
+        const registerError = document.getElementById('register-error');
+        const loginError = document.getElementById('login-error');
+
+        document.getElementById('register-button').addEventListener('click', function() {
+            const username = document.getElementById('register-username').value;
+            const password = document.getElementById('register-password').value;
+
+            if (username && password) {
+                registeredUsername = username;
+                registeredPassword = password;
+
+                registerContainer.style.display = 'none';
+                loginContainer.style.display = 'block';
+            } else {
+                registerError.style.display = 'block';
+            }
+        });
+
+        document.getElementById('login-button').addEventListener('click', function() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (username === registeredUsername && password === registeredPassword) {
+                loginContainer.style.display = 'none';
+                appContainer.style.display = 'block';
+            } else {
+                loginError.style.display = 'block';
+            }
+        });
+
+        let totalExpenses = 0;
+        let savingGoal = 0;
+        let monthlyBudget = 0;
+
+        const expenseForm = document.getElementById('expense-form');
+        const expenseNameInput = document.getElementById('expense-name');
+        const expenseAmountInput = document.getElementById('expense-amount');
+        const expensesList = document.getElementById('expenses-list');
+        const budgetStatus = document.getElementById('budget-status');
+        const totalExpensesDisplay = document.getElementById('total-expenses');
+        const totalSavingsDisplay = document.getElementById('total-savings');
+        const monthlyBudgetInput = document.getElementById('monthly-budget');
+        const resetButton = document.getElementById('reset-button');
+
+        expenseForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const expenseName = expenseNameInput.value;
+            const expenseAmount = parseFloat(expenseAmountInput.value);
+
+            if (expenseName && expenseAmount > 0) {
+                const listItem = document.createElement('li');
+                listItem.textContent = `${expenseName}: $${expenseAmount.toFixed(2)}`;
+                expensesList.appendChild(listItem);
+
+                totalExpenses += expenseAmount;
+                updateFinancialSummary();
+                
+                expenseNameInput.value = '';
+                expenseAmountInput.value = '';
+            }
+        });
+
+        document.getElementById('set-budget').addEventListener('click', function() {
+            monthlyBudget = parseFloat(monthlyBudgetInput.value);
+            if (monthlyBudget > 0) {
+                budgetStatus.textContent = `Tu presupuesto mensual es de $${monthlyBudget.toFixed(2)}.`;
+                updateFinancialSummary();
+            }
+        });
+
+        function updateFinancialSummary() {
+            if (monthlyBudget > 0) {
+                const totalSavings = monthlyBudget - totalExpenses;
+                totalExpensesDisplay.textContent = `Total de gastos este mes: $${totalExpenses.toFixed(2)}.`;
+                if (totalSavings >= 0) {
+                    totalSavingsDisplay.textContent = `Ahorro este mes: $${totalSavings.toFixed(2)}.`;
+                    totalSavingsDisplay.style.color = '#66ff66'; // Verde claro
+                } else {
+                    totalSavingsDisplay.textContent = `¡Te has excedido en $${Math.abs(totalSavings).toFixed(2)}!`;
+                    totalSavingsDisplay.style.color = '#ff6666'; // Rojo claro
+                }
+            }
+        }
+
+        resetButton.addEventListener('click', function() {
+            registeredUsername = "";
+            registeredPassword = "";
+            totalExpenses = 0;
+            monthlyBudget = 0;
+            expensesList.innerHTML = '';
+            budgetStatus.textContent = '';
+            totalExpensesDisplay.textContent = '';
+            totalSavingsDisplay.textContent = '';
+            registerContainer.style.display = 'block';
+            loginContainer.style.display = 'none';
+            appContainer.style.display = 'none';
+        });
+
+        // Código para las estrellas
+        const canvas = document.getElementById('stars');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const stars = [];
+        const starCount = 300;
+
+        for (let i = 0; i < starCount; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 1, // Estrellas más grandes
+                alpha: Math.random(),
+                speed: Math.random() * 0.5 + 0.1,
+            });
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.alpha})`;
+                ctx.fill();
+            });
+        }
+
+        function updateStars() {
+            stars.forEach(star => {
+                star.alpha = Math.abs(Math.sin(Date.now() * 0.001 * star.speed)); // Brillo de las estrellas
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                }
+            });
+        }
+
+        function animate() {
+            drawStars();
+            updateStars();
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+
+    <div class="planet"></div>
+</body>
+</html>
+
+
